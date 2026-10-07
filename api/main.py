@@ -63,50 +63,19 @@ tags_metadata = [
 # ─────────────────────────── App Init ────────────────────────────────
 app = FastAPI(
     title="Integration Failure Analyzer API",
-    description="""
-## Enterprise Integration Root-Cause Diagnosis Engine
-
-Powered by **SAP-tuned rule heuristics** and a **TF-IDF + Logistic Regression ML model**,
-this API classifies integration failures from SAP S/4HANA, SAP CPI, Salesforce, Workday,
-WMS, and third-party APIs into 7 operational categories, assigns severity levels, and
-prescribes concrete engineering resolutions.
-
-### Failure Categories
-| Category | Typical HTTP Codes |
-|---|---|
-| **Authentication/Authorization** | 401, 403 |
-| **Connectivity** | 502, 503 |
-| **Timeout** | 408, 504 |
-| **Validation/Data** | 400, 422 |
-| **Business error** | 409, 422 |
-| **Application/System error** | 500 |
-| **Unknown** | 0, 599, other |
-
-### Severity Scale
-| Badge | Score | Meaning |
-|---|---|---|
-| 🔴 Critical | ≥ 75 / 100 | Immediate pager-duty escalation |
-| 🟠 High | 55 – 74 | Same-day triage required |
-| 🟡 Medium | 35 – 54 | Scheduled investigation |
-| 🟢 Low | < 35 | Monitor and track |
-
-### How to use
-- **Single analysis** → `POST /analyze` with a JSON body
-- **Batch analysis** → `POST /analyze/batch` with an array of failures
-- **File upload** → `POST /analyze/file` with a CSV or JSON log file
-- **Statistics** → `GET /stats` for dataset-level aggregates
-- **Dashboard** → `GET /` for the interactive web UI
-    """,
+    description="""...""",
     version="1.0.0",
     openapi_tags=tags_metadata,
+    docs_url=None,
+    redoc_url=None,
     contact={
         "name": "Integration Failure Analyzer",
-        "url": "http://localhost:8000/docs",
     },
     license_info={
         "name": "MIT",
     },
 )
+
 
 app.add_middleware(
     CORSMiddleware,
