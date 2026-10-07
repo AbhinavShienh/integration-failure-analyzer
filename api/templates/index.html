@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Integration Failure Analyzer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand">
+                <div class="logo-icon">⚡</div>
+                <div>
+                    <h1>Integration Failure Analyzer</h1>
+                    <p class="subtitle">Intelligent Root-Cause & Severity Diagnosis for SAP S/4HANA, CPI & Cloud Integrations</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <span class="status-indicator online"><span class="dot"></span> System Operational</span>
+                <a href="/docs" target="_blank" class="btn btn-secondary btn-sm">API Swagger Docs ↗</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <!-- KPI Metrics Ribbon -->
+        <section class="kpi-grid">
+            <div class="kpi-card">
+                <span class="kpi-label">Total Logged Failures</span>
+                <span class="kpi-value" id="kpi-total">{{ stats.total_failures | default(0) }}</span>
+                <span class="kpi-sub">Across all monitored interfaces</span>
+            </div>
+            <div class="kpi-card border-critical">
+                <span class="kpi-label">🔴 Critical Incidents</span>
+                <span class="kpi-value text-critical" id="kpi-critical">{{ stats.severity_distribution.Critical | default(0) if stats.severity_distribution else 0 }}</span>
+                <span class="kpi-sub">Immediate action required</span>
+            </div>
+            <div class="kpi-card border-high">
+                <span class="kpi-label">🟠 High Incidents</span>
+                <span class="kpi-value text-high" id="kpi-high">{{ stats.severity_distribution.High | default(0) if stats.severity_distribution else 0 }}</span>
+                <span class="kpi-sub">Elevated business risk</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Avg Processing Latency</span>
+                <span class="kpi-value" id="kpi-latency">{{ stats.processing_time_stats_ms.mean | default(0) }} ms</span>
+                <span class="kpi-sub">P95: {{ stats.processing_time_stats_ms.p95 | default(0) }} ms</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Retry Exhaustion Rate</span>
+                <span class="kpi-value" id="kpi-retries">{{ stats.retry_stats.rate_retried_pct | default(0) }}%</span>
+                <span class="kpi-sub">Max attempts: {{ stats.retry_stats.max | default(0) }}</span>
+            </div>
+        </section>
+
+        <!-- Navigation Tabs -->
+        <div class="tabs-container">
+            <button class="tab-btn active" onclick="switchTab('analyzer')">🔍 Live Single Analyzer</button>
+            <button class="tab-btn" onclick="switchTab('analytics')">📊 Failure Analytics & Charts</button>
+            <button class="tab-btn" onclick="switchTab('ingest')">📁 File Ingestion & Batch Cleaning</button>
+        </div>
+
+        <!-- TAB 1: Live Analyzer -->
+        <section id="tab-analyzer" class="tab-content active">
+            <div class="analyzer-grid">
+                <!-- Input Panel -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>Diagnose Integration Failure</h2>
+                        <span class="badge-pill">Real-time Inference</span>
+                    </div>
+
+                    <div class="preset-section">
+                        <span class="preset-label">Quick Presets:</span>
+                        <div class="preset-buttons">
+                            <button type="button" class="preset-chip" onclick="applyPreset('auth_401')">401 OAuth Expiry</button>
+                            <button type="button" class="preset-chip" onclick="applyPreset('timeout_504')">504 CPI Timeout</button>
+                            <button type="button" class="preset-chip" onclick="applyPreset('lock_500')">500 SM12 Lock Table</button>
+                            <button type="button" class="preset-chip" onclick="applyPreset('kunnr_400')">400 Missing KUNNR</button>
+                            <button type="button" class="preset-chip" onclick="applyPreset('credit_422')">422 Credit Limit</button>
+                            <button type="button" class="preset-chip" onclick="applyPreset('tunnel_502')">502 Cloud Connector</button>
+                        </div>
+                    </div>
+
+                    <form id="analyze-form" onsubmit="submitSingleAnalysis(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="input-interface">Interface Name</label>
+                                <input type="text" id="input-interface" required value="Customer_Master_Sync" placeholder="e.g. Order_Create_Inbound">
+                            </div>
+                            <div class="form-group">
+                                <label for="input-status">HTTP / Error Code</label>
+                                <input type="number" id="input-status" required value="401" placeholder="401, 504, 500">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="input-source">Source System</label>
+                                <input type="text" id="input-source" required value="S4HANA" placeholder="e.g. S4HANA">
+                            </div>
+                            <div class="form-group">
+                                <label for="input-target">Target System</label>
+                                <input type="text" id="input-target" required value="CRM" placeholder="e.g. CRM">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="input-message">Error Message / Stack Trace</label>
+                            <textarea id="input-message" rows="3" required placeholder="Paste error message or exception details...">Unauthorized client: Bearer token expired or invalid JWT signature during OAuth handshake</textarea>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="input-retry">Retry Count</label>
+                                <input type="number" id="input-retry" min="0" value="3">
+                            </div>
+                            <div class="form-group">
+                                <label for="input-latency">Processing Time (ms)</label>
+                                <input type="number" id="input-latency" min="0" value="320">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block" id="btn-analyze">
+                            <span>⚡ Run Failure Analysis</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Live Results Panel -->
+                <div class="panel" id="result-panel">
+                    <div class="panel-header">
+                        <h2>Diagnosis & Recommendation</h2>
+                        <span id="result-status-badge" class="badge-pill">Awaiting Input</span>
+                    </div>
+
+                    <div id="result-empty" class="empty-state">
+                        <div class="empty-icon">🔬</div>
+                        <h3>No failure analyzed yet</h3>
+                        <p>Fill out the parameters or select a quick preset on the left and click <b>Run Failure Analysis</b>.</p>
+                    </div>
+
+                    <div id="result-content" class="diagnosis-card" style="display: none;">
+                        <div class="result-top-badges">
+                            <div class="badge-item">
+                                <span class="badge-title">Category</span>
+                                <span class="badge-tag category-tag" id="res-category">-</span>
+                            </div>
+                            <div class="badge-item">
+                                <span class="badge-title">Severity Level</span>
+                                <span class="badge-tag severity-tag" id="res-severity">-</span>
+                            </div>
+                            <div class="badge-item">
+                                <span class="badge-title">Classifier Confidence</span>
+                                <span class="badge-tag confidence-tag" id="res-confidence">-</span>
+                            </div>
+                        </div>
+
+                        <div class="recommendation-box">
+                            <div class="box-header">
+                                <span class="box-icon">💡</span>
+                                <h4>Root-Cause Recommendation</h4>
+                            </div>
+                            <p id="res-recommendation" class="recommendation-text">-</p>
+                        </div>
+
+                        <div class="reasoning-box">
+                            <div class="box-header">
+                                <span class="box-icon">⚖️</span>
+                                <h4>Severity & Risk Reasoning</h4>
+                            </div>
+                            <p id="res-reasoning" class="reasoning-text">-</p>
+                        </div>
+
+                        <div class="details-accordion">
+                            <div class="box-header">
+                                <span class="box-icon">🤖</span>
+                                <h4>Engine Comparison (Rule-Based vs ML)</h4>
+                            </div>
+                            <div class="comparison-grid">
+                                <div class="comp-card">
+                                    <span class="comp-label">Rule Engine Classification</span>
+                                    <span class="comp-val" id="comp-rule-cat">-</span>
+                                    <span class="comp-sub" id="comp-rule-reason">-</span>
+                                </div>
+                                <div class="comp-card">
+                                    <span class="comp-label">ML Model Classification</span>
+                                    <span class="comp-val" id="comp-ml-cat">-</span>
+                                    <span class="comp-sub" id="comp-ml-conf">-</span>
+                                </div>
+                            </div>
+                            <div class="comp-agreement" id="comp-agreement-banner"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: Analytics & Charts -->
+        <section id="tab-analytics" class="tab-content">
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="panel-header">
+                        <h3>Failure Categories Breakdown</h3>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="chart-category"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="panel-header">
+                        <h3>Incident Severity Distribution</h3>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="chart-severity"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="panel-header">
+                        <h3>Top Failing Interfaces</h3>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="chart-interfaces"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="panel-header">
+                        <h3>HTTP Status / Error Codes</h3>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="chart-status"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: File Ingestion & Batch Cleaning -->
+        <section id="tab-ingest" class="tab-content">
+            <div class="panel mb-4">
+                <div class="panel-header">
+                    <h2>Ingest Failure Dataset (CSV / JSON)</h2>
+                    <span class="badge-pill">Automated Cleaning & Validation</span>
+                </div>
+                <div class="upload-dropzone" id="dropzone" onclick="document.getElementById('file-input').click()">
+                    <input type="file" id="file-input" accept=".csv,.json" style="display: none;" onchange="handleFileSelected(event)">
+                    <div class="drop-icon">📤</div>
+                    <h3>Drag & drop integration log file here</h3>
+                    <p>Supports .CSV and .JSON formats (e.g., SAP CPI trace or S/4HANA failure logs)</p>
+                    <button type="button" class="btn btn-secondary">Browse File</button>
+                    <span id="selected-file-name" class="file-name-text"></span>
+                </div>
+                <div class="action-bar" style="margin-top: 1rem;">
+                    <button type="button" class="btn btn-primary" id="btn-upload" onclick="uploadAndAnalyzeFile()" disabled>
+                        <span>🚀 Clean & Analyze Dataset</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Cleaning Audit Summary -->
+            <div id="audit-summary-container" class="panel mb-4" style="display: none;">
+                <div class="panel-header">
+                    <h3>Data Cleaning & Quality Audit</h3>
+                    <span class="badge-pill text-success">Cleaned & Verified</span>
+                </div>
+                <div class="audit-grid" id="audit-grid"></div>
+            </div>
+
+            <!-- Table of Sample Results -->
+            <div id="table-container" class="panel" style="display: none;">
+                <div class="panel-header table-header-flex">
+                    <h3>Classified Failure Log Records</h3>
+                    <div class="table-filters">
+                        <input type="text" id="table-search" placeholder="Filter by interface or message..." onkeyup="filterTable()">
+                        <select id="severity-filter" onchange="filterTable()">
+                            <option value="">All Severities</option>
+                            <option value="Critical">🔴 Critical</option>
+                            <option value="High">🟠 High</option>
+                            <option value="Medium">🟡 Medium</option>
+                            <option value="Low">🟢 Low</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table" id="failure-table">
+                        <thead>
+                            <tr>
+                                <th>Severity</th>
+                                <th>Interface</th>
+                                <th>Route (Src → Tgt)</th>
+                                <th>Status</th>
+                                <th>Category</th>
+                                <th>Confidence</th>
+                                <th>Recommendation</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <p>Enterprise Integration Failure Analyzer • Powered by FastAPI & scikit-learn • Deep root-cause diagnosis</p>
+    </footer>
+
+    <!-- Pass backend statistics to frontend JavaScript -->
+    <script>
+        window.INITIAL_STATS = {{ stats | tojson | safe }};
+    </script>
+    <script src="/static/app.js"></script>
+</body>
+</html>
