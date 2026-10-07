@@ -15,7 +15,7 @@
                 <div class="logo-icon">⚡</div>
                 <div>
                     <h1>Integration Failure Analyzer</h1>
-                    <p class="subtitle">Intelligent Root-Cause & Severity Diagnosis for SAP S/4HANA, CPI & Cloud Integrations</p>
+                    <p class="subtitle">Intelligent Root-Cause &amp; Severity Diagnosis for SAP S/4HANA, CPI &amp; Cloud Integrations</p>
                 </div>
             </div>
             <div class="header-actions">
@@ -58,8 +58,8 @@
         <!-- Navigation Tabs -->
         <div class="tabs-container">
             <button class="tab-btn active" onclick="switchTab('analyzer')">🔍 Live Single Analyzer</button>
-            <button class="tab-btn" onclick="switchTab('analytics')">📊 Failure Analytics & Charts</button>
-            <button class="tab-btn" onclick="switchTab('ingest')">📁 File Ingestion & Batch Cleaning</button>
+            <button class="tab-btn" onclick="switchTab('analytics')">📊 Failure Analytics &amp; Charts</button>
+            <button class="tab-btn" onclick="switchTab('ingest')">📁 File Ingestion &amp; Batch Cleaning</button>
         </div>
 
         <!-- TAB 1: Live Analyzer -->
@@ -69,80 +69,130 @@
                 <div class="panel">
                     <div class="panel-header">
                         <h2>Diagnose Integration Failure</h2>
-                        <span class="badge-pill">Real-time Inference</span>
+                        <!-- Form / JSON toggle -->
+                        <div class="input-mode-toggle">
+                            <button type="button" class="mode-btn active" id="btn-mode-form" onclick="setInputMode('form')">📋 Form</button>
+                            <button type="button" class="mode-btn" id="btn-mode-json" onclick="setInputMode('json')">{ } JSON</button>
+                        </div>
                     </div>
 
+                    <!-- Quick Presets (visible in both modes) -->
                     <div class="preset-section">
                         <span class="preset-label">Quick Presets:</span>
                         <div class="preset-buttons">
-                            <button type="button" class="preset-chip" onclick="applyPreset('auth_401')">401 OAuth Expiry</button>
-                            <button type="button" class="preset-chip" onclick="applyPreset('timeout_504')">504 CPI Timeout</button>
-                            <button type="button" class="preset-chip" onclick="applyPreset('lock_500')">500 SM12 Lock Table</button>
-                            <button type="button" class="preset-chip" onclick="applyPreset('kunnr_400')">400 Missing KUNNR</button>
-                            <button type="button" class="preset-chip" onclick="applyPreset('credit_422')">422 Credit Limit</button>
-                            <button type="button" class="preset-chip" onclick="applyPreset('tunnel_502')">502 Cloud Connector</button>
+                            <button type="button" class="preset-chip" onclick="applyPreset('auth_401')">🔴 401 OAuth Expiry</button>
+                            <button type="button" class="preset-chip" onclick="applyPreset('timeout_504')">🔴 504 CPI Timeout</button>
+                            <button type="button" class="preset-chip" onclick="applyPreset('lock_500')">🔴 500 SM12 Lock</button>
+                            <button type="button" class="preset-chip" onclick="applyPreset('idoc_500')">🔴 500 IDoc Status 51</button>
+                            <button type="button" class="preset-chip" onclick="applyPreset('tunnel_502')">🟠 502 Connector Offline</button>
+                            <button type="button" class="preset-chip" onclick="applyPreset('cert_403')">🟠 403 Certificate</button>
+                            <button type="button" class="preset-chip" onclick="applyPreset('pool_503')">🟠 503 Pool Exhausted</button>
+                            <button type="button" class="preset-chip" onclick="applyPreset('abap_500')">🟠 500 ABAP Dump ST22</button>
+                            <button type="button" class="preset-chip" onclick="applyPreset('credit_422')">🟡 422 Credit Limit</button>
+                            <button type="button" class="preset-chip" onclick="applyPreset('period_422')">🟡 422 Posting Period</button>
+                            <button type="button" class="preset-chip" onclick="applyPreset('kunnr_400')">🟡 400 Missing KUNNR</button>
+                            <button type="button" class="preset-chip" onclick="applyPreset('duplicate_409')">🟡 409 Duplicate PO</button>
+                            <button type="button" class="preset-chip" onclick="applyPreset('xml_400')">🟢 400 XML Parse Error</button>
+                            <button type="button" class="preset-chip" onclick="applyPreset('unknown_599')">🟢 599 Unknown Code</button>
                         </div>
                     </div>
 
-                    <form id="analyze-form" onsubmit="submitSingleAnalysis(event)">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="input-interface">Interface Name</label>
-                                <input type="text" id="input-interface" required value="Customer_Master_Sync" placeholder="e.g. Order_Create_Inbound">
+                    <!-- FORM MODE -->
+                    <div id="input-form-panel">
+                        <form id="analyze-form" onsubmit="submitSingleAnalysis(event)">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="input-interface">Interface Name <span class="req">*</span></label>
+                                    <input type="text" id="input-interface" required placeholder="e.g. Customer_Master_Sync">
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-status">HTTP / Error Code <span class="req">*</span></label>
+                                    <input type="number" id="input-status" required placeholder="401, 504, 500, 502…">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="input-source">Source System</label>
+                                    <input type="text" id="input-source" placeholder="e.g. S4HANA, Salesforce_CRM">
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-target">Target System</label>
+                                    <input type="text" id="input-target" placeholder="e.g. SAP_CPI, WMS_Manhattan">
+                                </div>
                             </div>
                             <div class="form-group">
-                                <label for="input-status">HTTP / Error Code</label>
-                                <input type="number" id="input-status" required value="401" placeholder="401, 504, 500">
+                                <label for="input-message">Error Message / Stack Trace <span class="req">*</span></label>
+                                <textarea id="input-message" rows="4" required placeholder="Paste full error message, exception text, or SAP dump description…"></textarea>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="input-retry">Retry Count</label>
+                                    <input type="number" id="input-retry" min="0" value="0" placeholder="0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-latency">Processing Time (ms)</label>
+                                    <input type="number" id="input-latency" min="0" value="0" placeholder="e.g. 62400">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="input-timestamp">Timestamp (ISO 8601, optional)</label>
+                                <input type="text" id="input-timestamp" placeholder="e.g. 2026-10-07T10:00:00Z">
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block" id="btn-analyze-form">
+                                <span>⚡ Run Failure Analysis</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- JSON MODE -->
+                    <div id="input-json-panel" style="display:none;">
+                        <div class="json-editor-header">
+                            <label>Paste JSON Input</label>
+                            <div class="json-editor-actions">
+                                <button type="button" class="btn-icon" onclick="formatJson()" title="Format JSON">⎆ Format</button>
+                                <button type="button" class="btn-icon" onclick="copyJson()" title="Copy JSON">⎘ Copy</button>
+                                <button type="button" class="btn-icon" onclick="clearJson()" title="Clear">✕ Clear</button>
                             </div>
                         </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="input-source">Source System</label>
-                                <input type="text" id="input-source" required value="S4HANA" placeholder="e.g. S4HANA">
-                            </div>
-                            <div class="form-group">
-                                <label for="input-target">Target System</label>
-                                <input type="text" id="input-target" required value="CRM" placeholder="e.g. CRM">
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="input-message">Error Message / Stack Trace</label>
-                            <textarea id="input-message" rows="3" required placeholder="Paste error message or exception details...">Unauthorized client: Bearer token expired or invalid JWT signature during OAuth handshake</textarea>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="input-retry">Retry Count</label>
-                                <input type="number" id="input-retry" min="0" value="3">
-                            </div>
-                            <div class="form-group">
-                                <label for="input-latency">Processing Time (ms)</label>
-                                <input type="number" id="input-latency" min="0" value="320">
-                            </div>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary btn-block" id="btn-analyze">
+                        <textarea
+                            id="json-input"
+                            class="json-textarea"
+                            rows="16"
+                            spellcheck="false"
+                            placeholder='{
+  "interface": "Customer_Master_Sync",
+  "source": "Salesforce_CRM",
+  "target": "S4HANA",
+  "status_code": 401,
+  "error_message": "Unauthorized client: Bearer token expired",
+  "processing_time": 320,
+  "retry_count": 3,
+  "timestamp": "2026-10-07T08:14:00Z"
+}'></textarea>
+                        <div id="json-error-banner" class="json-error-msg" style="display:none;"></div>
+                        <button type="button" class="btn btn-primary btn-block" id="btn-analyze-json" onclick="submitJsonAnalysis()">
                             <span>⚡ Run Failure Analysis</span>
                         </button>
-                    </form>
+                    </div>
                 </div>
 
                 <!-- Live Results Panel -->
                 <div class="panel" id="result-panel">
                     <div class="panel-header">
-                        <h2>Diagnosis & Recommendation</h2>
+                        <h2>Diagnosis &amp; Recommendation</h2>
                         <span id="result-status-badge" class="badge-pill">Awaiting Input</span>
                     </div>
 
                     <div id="result-empty" class="empty-state">
                         <div class="empty-icon">🔬</div>
                         <h3>No failure analyzed yet</h3>
-                        <p>Fill out the parameters or select a quick preset on the left and click <b>Run Failure Analysis</b>.</p>
+                        <p>Select a preset or fill in the inputs, then click <b>Run Failure Analysis</b>.</p>
+                        <p style="margin-top:.5rem; font-size:.82rem; color: #64748b;">
+                            Switch to <b>{ } JSON mode</b> to paste a raw JSON body directly.
+                        </p>
                     </div>
 
-                    <div id="result-content" class="diagnosis-card" style="display: none;">
+                    <div id="result-content" class="diagnosis-card" style="display:none;">
                         <div class="result-top-badges">
                             <div class="badge-item">
                                 <span class="badge-title">Category</span>
@@ -169,7 +219,7 @@
                         <div class="reasoning-box">
                             <div class="box-header">
                                 <span class="box-icon">⚖️</span>
-                                <h4>Severity & Risk Reasoning</h4>
+                                <h4>Severity &amp; Risk Reasoning</h4>
                             </div>
                             <p id="res-reasoning" class="reasoning-text">-</p>
                         </div>
@@ -181,17 +231,27 @@
                             </div>
                             <div class="comparison-grid">
                                 <div class="comp-card">
-                                    <span class="comp-label">Rule Engine Classification</span>
+                                    <span class="comp-label">Rule Engine</span>
                                     <span class="comp-val" id="comp-rule-cat">-</span>
                                     <span class="comp-sub" id="comp-rule-reason">-</span>
                                 </div>
                                 <div class="comp-card">
-                                    <span class="comp-label">ML Model Classification</span>
+                                    <span class="comp-label">ML Model</span>
                                     <span class="comp-val" id="comp-ml-cat">-</span>
                                     <span class="comp-sub" id="comp-ml-conf">-</span>
                                 </div>
                             </div>
                             <div class="comp-agreement" id="comp-agreement-banner"></div>
+                        </div>
+
+                        <!-- Raw JSON Output viewer -->
+                        <div class="details-accordion" style="margin-top:.75rem;">
+                            <div class="box-header" style="cursor:pointer;" onclick="toggleRawJson()">
+                                <span class="box-icon">📄</span>
+                                <h4>Raw JSON Response</h4>
+                                <span id="raw-json-toggle-icon" style="margin-left:auto; color:#64748b; font-size:.8rem;">▼ Show</span>
+                            </div>
+                            <pre id="raw-json-output" class="raw-json-block" style="display:none;"></pre>
                         </div>
                     </div>
                 </div>
@@ -202,39 +262,20 @@
         <section id="tab-analytics" class="tab-content">
             <div class="charts-grid">
                 <div class="chart-card">
-                    <div class="panel-header">
-                        <h3>Failure Categories Breakdown</h3>
-                    </div>
-                    <div class="chart-wrapper">
-                        <canvas id="chart-category"></canvas>
-                    </div>
+                    <div class="panel-header"><h3>Failure Categories Breakdown</h3></div>
+                    <div class="chart-wrapper"><canvas id="chart-category"></canvas></div>
                 </div>
-
                 <div class="chart-card">
-                    <div class="panel-header">
-                        <h3>Incident Severity Distribution</h3>
-                    </div>
-                    <div class="chart-wrapper">
-                        <canvas id="chart-severity"></canvas>
-                    </div>
+                    <div class="panel-header"><h3>Incident Severity Distribution</h3></div>
+                    <div class="chart-wrapper"><canvas id="chart-severity"></canvas></div>
                 </div>
-
                 <div class="chart-card">
-                    <div class="panel-header">
-                        <h3>Top Failing Interfaces</h3>
-                    </div>
-                    <div class="chart-wrapper">
-                        <canvas id="chart-interfaces"></canvas>
-                    </div>
+                    <div class="panel-header"><h3>Top Failing Interfaces</h3></div>
+                    <div class="chart-wrapper"><canvas id="chart-interfaces"></canvas></div>
                 </div>
-
                 <div class="chart-card">
-                    <div class="panel-header">
-                        <h3>HTTP Status / Error Codes</h3>
-                    </div>
-                    <div class="chart-wrapper">
-                        <canvas id="chart-status"></canvas>
-                    </div>
+                    <div class="panel-header"><h3>HTTP Status / Error Codes</h3></div>
+                    <div class="chart-wrapper"><canvas id="chart-status"></canvas></div>
                 </div>
             </div>
         </section>
@@ -244,44 +285,52 @@
             <div class="panel mb-4">
                 <div class="panel-header">
                     <h2>Ingest Failure Dataset (CSV / JSON)</h2>
-                    <span class="badge-pill">Automated Cleaning & Validation</span>
+                    <span class="badge-pill">Automated Cleaning &amp; Validation</span>
                 </div>
                 <div class="upload-dropzone" id="dropzone" onclick="document.getElementById('file-input').click()">
-                    <input type="file" id="file-input" accept=".csv,.json" style="display: none;" onchange="handleFileSelected(event)">
+                    <input type="file" id="file-input" accept=".csv,.json" style="display:none;" onchange="handleFileSelected(event)">
                     <div class="drop-icon">📤</div>
-                    <h3>Drag & drop integration log file here</h3>
-                    <p>Supports .CSV and .JSON formats (e.g., SAP CPI trace or S/4HANA failure logs)</p>
+                    <h3>Drag &amp; drop integration log file here</h3>
+                    <p>Supports .CSV and .JSON (e.g., SAP CPI trace or S/4HANA failure logs)</p>
                     <button type="button" class="btn btn-secondary">Browse File</button>
                     <span id="selected-file-name" class="file-name-text"></span>
                 </div>
-                <div class="action-bar" style="margin-top: 1rem;">
+                <div class="action-bar" style="margin-top:1rem;">
                     <button type="button" class="btn btn-primary" id="btn-upload" onclick="uploadAndAnalyzeFile()" disabled>
-                        <span>🚀 Clean & Analyze Dataset</span>
+                        <span>🚀 Clean &amp; Analyze Dataset</span>
                     </button>
                 </div>
             </div>
 
-            <!-- Cleaning Audit Summary -->
-            <div id="audit-summary-container" class="panel mb-4" style="display: none;">
+            <div id="audit-summary-container" class="panel mb-4" style="display:none;">
                 <div class="panel-header">
-                    <h3>Data Cleaning & Quality Audit</h3>
-                    <span class="badge-pill text-success">Cleaned & Verified</span>
+                    <h3>Data Cleaning &amp; Quality Audit</h3>
+                    <span class="badge-pill text-success">Cleaned &amp; Verified</span>
                 </div>
                 <div class="audit-grid" id="audit-grid"></div>
             </div>
 
-            <!-- Table of Sample Results -->
-            <div id="table-container" class="panel" style="display: none;">
+            <div id="table-container" class="panel" style="display:none;">
                 <div class="panel-header table-header-flex">
                     <h3>Classified Failure Log Records</h3>
                     <div class="table-filters">
-                        <input type="text" id="table-search" placeholder="Filter by interface or message..." onkeyup="filterTable()">
+                        <input type="text" id="table-search" placeholder="Filter by interface or message…" onkeyup="filterTable()">
                         <select id="severity-filter" onchange="filterTable()">
                             <option value="">All Severities</option>
                             <option value="Critical">🔴 Critical</option>
                             <option value="High">🟠 High</option>
                             <option value="Medium">🟡 Medium</option>
                             <option value="Low">🟢 Low</option>
+                        </select>
+                        <select id="category-filter" onchange="filterTable()">
+                            <option value="">All Categories</option>
+                            <option value="Authentication/Authorization">Authentication/Authorization</option>
+                            <option value="Connectivity">Connectivity</option>
+                            <option value="Timeout">Timeout</option>
+                            <option value="Validation/Data">Validation/Data</option>
+                            <option value="Business error">Business error</option>
+                            <option value="Application/System error">Application/System error</option>
+                            <option value="Unknown">Unknown</option>
                         </select>
                     </div>
                 </div>
@@ -306,10 +355,9 @@
     </main>
 
     <footer class="app-footer">
-        <p>Enterprise Integration Failure Analyzer • Powered by FastAPI & scikit-learn • Deep root-cause diagnosis</p>
+        <p>Enterprise Integration Failure Analyzer • Powered by FastAPI &amp; scikit-learn • Deep root-cause diagnosis</p>
     </footer>
 
-    <!-- Pass backend statistics to frontend JavaScript -->
     <script>
         window.INITIAL_STATS = {{ stats | tojson | safe }};
     </script>

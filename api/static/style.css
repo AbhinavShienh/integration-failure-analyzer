@@ -655,3 +655,98 @@ textarea {
     color: var(--text-muted);
     margin-top: auto;
 }
+
+/* ─── Input Mode Toggle ─────────────────────────────────────── */
+.input-mode-toggle {
+    display: flex;
+    gap: 0.35rem;
+    background: var(--bg-base);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 0.2rem;
+}
+
+.mode-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-family: var(--font-sans);
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.35rem 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.mode-btn:hover { color: var(--text-primary); background: rgba(255,255,255,0.06); }
+.mode-btn.active { background: var(--accent-primary); color: #041226; }
+
+/* ─── Required field marker ─────────────────────────────────── */
+.req { color: var(--critical); font-size: 0.85em; }
+
+/* ─── JSON Editor ───────────────────────────────────────────── */
+.json-editor-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+.json-editor-header label { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.json-editor-actions { display: flex; gap: 0.4rem; }
+
+.btn-icon {
+    background: var(--bg-base);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-family: var(--font-sans);
+    font-size: 0.73rem;
+    font-weight: 500;
+    padding: 0.28rem 0.6rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.btn-icon:hover { color: var(--accent-primary); border-color: var(--accent-primary); background: var(--accent-subtle); }
+
+.json-textarea {
+    width: 100%;
+    background: #080f1e;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: #a5f3fc;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    line-height: 1.6;
+    padding: 0.85rem;
+    resize: vertical;
+    tab-size: 2;
+    margin-bottom: 0.65rem;
+    transition: border-color 0.2s;
+}
+.json-textarea:focus { outline: none; border-color: var(--accent-primary); box-shadow: 0 0 0 2px var(--accent-subtle); }
+
+.json-error-msg {
+    background: rgba(239,68,68,.1);
+    border: 1px solid rgba(239,68,68,.35);
+    border-radius: var(--radius-sm);
+    color: #fca5a5;
+    font-size: 0.82rem;
+    padding: 0.55rem 0.85rem;
+    margin-bottom: 0.75rem;
+}
+
+/* ─── Raw JSON Response Viewer ──────────────────────────────── */
+.raw-json-block {
+    background: #080f1e;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: #86efac;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.6;
+    padding: 0.85rem;
+    overflow-x: auto;
+    max-height: 320px;
+    overflow-y: auto;
+    margin-top: 0.65rem;
+    white-space: pre;
+}
+
+/* ─── Action bar ────────────────────────────────────────────── */
+.action-bar { display: flex; gap: 0.75rem; align-items: center; }
