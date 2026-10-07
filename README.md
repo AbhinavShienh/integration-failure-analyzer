@@ -36,35 +36,40 @@ The **Integration Failure Analyzer** automates triage by:
 
 ```mermaid
 flowchart TD
-    subgraph Ingestion["1. Ingestion Layer"]
-        CSV[Synthetic CSV Log] --> DP[Data Preprocessor]
-        JSON[Synthetic JSON Log] --> DP
-        API_IN[FastAPI REST Request] --> DP
+    subgraph ING["1 · Ingestion Layer"]
+        CSV["CSV Log File"] --> DP["Data Preprocessor"]
+        JSN["JSON Log File"] --> DP
+        REQ["FastAPI REST Request"] --> DP
     end
 
-    subgraph Preprocessing["2. Validation & Cleaning"]
-        DP --> DEDUP[Deduplication Engine]
-        DEDUP --> IMPUTE[Null Imputation & Latency Normalization]
-        IMPUTE --> STATS[Descriptive Analytics Engine]
+    subgraph PRE["2 · Validation and Cleaning"]
+        DP --> DEDUP["Deduplication Engine"]
+        DEDUP --> IMPUTE["Null Imputation and Latency Repair"]
+        IMPUTE --> STATS["Descriptive Analytics Engine"]
     end
 
-    subgraph Classification["3. Classification Engines"]
-        IMPUTE --> RULE[Rule-Based Classifier<br/>Deterministic Regex & Status Codes]
-        IMPUTE --> ML[ML Classifier<br/>TF-IDF + Logistic Regression]
-        RULE --> RECON[Reconciliation & Consensus Arbiter]
-        ML --> RECON
+    subgraph CLS["3 · Classification Engines"]
+        IMPUTE --> RULE["Rule-Based Classifier\nDeterministic Regex and Status Codes"]
+        IMPUTE --> ML["ML Classifier\nTF-IDF plus Logistic Regression"]
+        RULE --> ARB["Consensus Arbiter\nReconciles rule vs ML prediction"]
+        ML --> ARB
     end
 
-    subgraph Reasoning["4. Scoring & Prescriptions"]
-        RECON --> SEV[Multi-Factor Severity Engine<br/>🔴 Critical | 🟠 High | 🟡 Medium | 🟢 Low]
-        RECON --> REC[Root-Cause Recommendation Engine<br/>SAP S/4HANA / CPI Guidance]
+    subgraph SCO["4 · Severity Scoring and Prescriptions"]
+        ARB --> SEV["Multi-Factor Severity Engine\nCritical · High · Medium · Low"]
+        ARB --> REC["Root-Cause Recommender\nSAP S4HANA and CPI Playbooks"]
     end
 
-    subgraph Delivery["5. Delivery & Interfaces"]
-        SEV --> API_OUT[FastAPI REST API<br/>/analyze, /analyze/batch, /stats]
-        REC --> API_OUT
-        API_OUT --> DASH[Interactive Web Dashboard<br/>KPIs, Chart.js, File Drag & Drop]
+    subgraph DEL["5 · Delivery and Interfaces"]
+        SEV --> API["FastAPI REST API\nPOST /analyze · /analyze/batch · /analyze/file · GET /stats"]
+        REC --> API
+        API --> DASH["Interactive Web Dashboard\nKPIs · Chart.js Charts · File Drag and Drop"]
     end
+
+    ING --> PRE
+    PRE --> CLS
+    CLS --> SCO
+    SCO --> DEL
 ```
 
 ---
